@@ -1,0 +1,12 @@
+# AUTO-GENERATED FILE - DO NOT EDIT!! Use ldapmodify.
+# CRC32 f9fc91ea
+dn: cn=user,cn=schema,cn=config,cn=schema,cn=config,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: user
+olcAttributeTypes: ( 1.3.114.7.4.2.0.33 NAME 'memberOf' SYNTAX 1.3.6.1.4.1.
+ 1466.115.121.1.26 )
+olcAttributeTypes: ( 1.2.840.113556.1.4.221 NAME 'sAMAccountName' SYNTAX 1.
+ 3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+olcObjectClasses: ( 1.2.840.113556.1.5.9 NAME 'user' DESC 'a user' SUP orga
+ nizationalPerson STRUCTURAL MUST cn MAY ( userPassword $ memberOf $ sAMAccoun
+ tName ) )

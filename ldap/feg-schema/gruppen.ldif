@@ -1,0 +1,134 @@
+dn: cn=ownCloud-Admins,ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: groupOfNames
+objectClass: top
+cn: ownCloud-Admins
+
+dn: cn=ownCloud,ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: groupOfNames
+objectClass: top
+cn: ownCloud
+member: cn=ownCloud-Admins,ou=gruppen,dc=feg-giessen,dc=de
+
+dn: cn=Gemeindeleitung,ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: feggroup
+objectClass: groupOfNames
+objectClass: top
+syncGroupId: 5
+cn: Gemeindeleitung
+
+dn: cn=FeG Intranet,ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: feggroup
+objectClass: groupOfNames
+objectClass: top
+syncGroupId: 6
+cn: FeG Intranet
+
+dn: cn=AK Webportal,ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: feggroup
+objectClass: groupOfNames
+objectClass: top
+syncGroupId: 20
+cn: AK Webportal
+
+dn: cn=AK 2plus,ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: feggroup
+objectClass: groupOfNames
+objectClass: top
+syncGroupId: 21
+cn: AK 2plus
+
+dn: cn=AK Ausländerarbeit,ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: feggroup
+objectClass: groupOfNames
+objectClass: top
+syncGroupId: 22
+cn: AK Ausländerarbeit
+
+dn: cn=Wohnungsvermittlung,ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: feggroup
+objectClass: groupOfNames
+objectClass: top
+syncGroupId: 23
+cn: Wohnungsvermittlung
+
+dn: cn=KG-Koordination,ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: feggroup
+objectClass: groupOfNames
+objectClass: top
+syncGroupId: 24
+cn: KG-Koordination
+
+dn: cn=Gottesdienstleiter,ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: feggroup
+objectClass: groupOfNames
+objectClass: top
+syncGroupId: 25
+cn: Gottesdienstleiter
+
+dn: cn=AK Präsentation,ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: feggroup
+objectClass: groupOfNames
+objectClass: top
+syncGroupId: 27
+cn: AK Präsentation
+
+dn: cn=AK Lichttechnik,ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: groupOfNames
+objectClass: top
+cn: AK Lichttechnik
+
+dn: cn=Veranstaltungstechnik,ou=gruppen,dc=feg-giessen,dc=de
+changetype:add
+objectClass: groupOfNames
+objectClass: top
+cn: Veranstaltungstechnik
+member: cn=AK Lichttechnik,ou=gruppen,dc=feg-giessen,dc=de
+member: cn=AK Präsentation,ou=gruppen,dc=feg-giessen,dc=de
+
+dn: cn=Schema-Admins,ou=gruppen,dc=feg-giessen,dc=de
+changetype:add
+objectClass: groupOfNames
+objectClass: top
+cn: Schema-Admins
+description: Administratoren mit Recht das Schema zu änden.
+
+dn: cn=Verzeichnis-Admins,ou=gruppen,dc=feg-giessen,dc=de
+changetype:add
+objectClass: groupOfNames
+objectClass: top
+cn: Verzeichnis-Admins
+description: Administratoren mit Vollzugriff auf das komplette LDAP-Verzeichnis.
+member: cn=ldapsync,ou=services,dc=feg-giessen,dc=de
+
+dn: cn=T3_Backend,ou=gruppen,dc=feg-giessen,dc=de
+changetype:add
+objectClass: groupOfNames
+objectClass: top
+cn: T3_Backend
+
+dn: cn=T3_Frontend,ou=gruppen,dc=feg-giessen,dc=de
+changetype:add
+objectClass: groupOfNames
+objectClass: top
+cn: T3_Frontend
+member: cn=Gemeindeleitung,ou=gruppen,dc=feg-giessen,dc=de
+member: cn=FeG Intranet,ou=gruppen,dc=feg-giessen,dc=de
+member: cn=AK Webportal,ou=gruppen,dc=feg-giessen,dc=de
+member: cn=AK 2plus,ou=gruppen,dc=feg-giessen,dc=de
+member: cn=AK Ausländerarbeit,ou=gruppen,dc=feg-giessen,dc=de
+member: cn=Wohnungsvermittlung,ou=gruppen,dc=feg-giessen,dc=de
+member: cn=KG-Koordination,ou=gruppen,dc=feg-giessen,dc=de
+member: cn=Gottesdienstleiter,ou=gruppen,dc=feg-giessen,dc=de
+member: cn=AK Präsentation,ou=gruppen,dc=feg-giessen,dc=de

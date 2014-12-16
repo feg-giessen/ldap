@@ -1,0 +1,38 @@
+dn: cn=fegperson,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: fegperson
+olcAttributeTypes: ( 2.25.9707085203246740429389532100497360155.1 
+    NAME 'startDate' 
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 
+    SINGLE-VALUE )    
+olcAttributeTypes: ( 2.25.9707085203246740429389532100497360155.2 
+    NAME 'endDate' 
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 
+    SINGLE-VALUE )    
+olcAttributeTypes: ( 2.25.9707085203246740429389532100497360155.3 
+    NAME 'initialPassword' 
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.40 
+    SINGLE-VALUE )    
+olcAttributeTypes: ( 2.25.9707085203246740429389532100497360155.4 
+    NAME 'syncUserId' 
+    EQUALITY integerMatch 
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+    SINGLE-VALUE )    
+olcAttributeTypes: ( 2.25.9707085203246740429389532100497360155.6 
+    NAME 'typo3Disabled' 
+    EQUALITY booleanMatch 
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 
+    SINGLE-VALUE )    
+olcAttributeTypes: ( 1.3.6.1.4.1.5427.1.389.4.2 
+    NAME 'dateOfBirth' 
+    DESC 'Date of birth (format YYYYMMDD, only numeric chars)' 
+    EQUALITY numericStringMatch 
+    SUBSTR numericStringSubstringsMatch 
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.36
+    SINGLE-VALUE )    
+olcObjectClasses: ( 1.2.276.113556.1.5.9 
+    NAME 'fegperson' 
+    DESC 'FeG Person'
+    SUP inetOrgPerson 
+    STRUCTURAL 
+    MAY ( startDate $ endDate $ initialPassword $ dateOfBirth $ syncUserId $ typo3Disabled ) )

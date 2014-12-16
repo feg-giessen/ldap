@@ -1,0 +1,49 @@
+dn: ou=benutzer,dc=feg-giessen,dc=de
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+description: Top-Level Gruppe für alle gültigen Benutzer
+ou: benutzer
+
+dn: ou=mitglieder,ou=benutzer,dc=feg-giessen,dc=de
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+description: Offizielle Mitglieder der FeG Gießen. Gepflegt über das Gemeindebüro (Optigem).
+ou: mitglieder
+
+dn: ou=extern,ou=benutzer,dc=feg-giessen,dc=de
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+description: Mitarbeiter, die kein Mitglied in der FeG Gießen sind.
+ou: extern
+
+dn: ou=auxilary,ou=benutzer,dc=feg-giessen,dc=de
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+description: Hilfskonten, z.B. für Owncloud-Gruppen-Freigaben
+ou: auxilary
+
+dn: ou=inaktiv,dc=feg-giessen,dc=de
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+description: Inaktive Konten (z.B. Gemeinde-Austritt, etc.)
+ou: inaktiv
+
+dn: ou=gruppen,dc=feg-giessen,dc=de
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+description: Benutzergruppen
+ou: gruppen
+
+dn: ou=services,dc=feg-giessen,dc=de
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+description: Service- und System-Konten
+ou: gruppen
+

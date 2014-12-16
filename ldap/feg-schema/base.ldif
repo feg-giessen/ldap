@@ -1,0 +1,15 @@
+# Tree root
+dn: dc=feg-giessen,dc=de
+objectClass: dcObject
+objectClass: organization
+o: feg-giessen.de
+dc: feg-giessen
+description: Freie ev. Gemeinde Giessen
+
+# LDAP admin
+dn: cn=admin,dc=feg-giessen,dc=de
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: admin
+userPassword: {SSHA}XAD9O1Own1F5owq+28vUZrLG+Qf0UuEc
+description: LDAP administrator
