@@ -78,10 +78,14 @@ if (function_exists("ldap_escape") === false)
     }
 }
 
-$groups = array();
-
 $db_handle = mysql_connect($config['db_server'], $config['db_user'], $config['db_pw']);
 $db_found = mysql_select_db($config['db_name'], $db_handle);
+
+if (!$db_found) {
+    log_msg('Database NOT Found.');
+    mysql_close($db_handle);
+    exit;
+}
 
 $ldap_conn = ldap_connect($config['ldap_server'], $config['ldap_port']);
 ldap_set_option($ldap_conn, LDAP_OPT_PROTOCOL_VERSION, 3);
@@ -93,9 +97,13 @@ if (!$success) {
     exit;
 }
 
-$filter = '(objectClass=groupOfNames)';
-$sr = ldap_search($ldap_conn, 'ou=gruppen,dc=feg-giessen,dc=de', $filter);
+$groups = array();
 
+$filter = '(objectClass=groupOfNames)';
+$group_dn = 'ou=gruppen,dc=feg-giessen,dc=de';
+$sr = ldap_search($ldap_conn, $group_dn, $filter);
+
+// get groups with syncGroupId from LDAP
 $info = array();
 if ($sr !== false) {
     $info = ldap_get_entries($ldap_conn, $sr);
@@ -103,7 +111,7 @@ if ($sr !== false) {
     ldap_free_result($sr);
 
     for($i = 0; $i < $info['count']; $i++) {
-        //print_r($info[$i]);
+
         $group_name = $info[$i]['cn'][0];
 
         if (!array_key_exists('syncgroupid', $info[$i])) {
@@ -133,185 +141,219 @@ if ($sr !== false) {
     unset($info);
 }
 
-if ($db_found) {
-    $sql = "SELECT * FROM fe_users ORDER BY name";
-    $result = mysql_query($sql);
+// import optigem groups
+$sql = "SELECT optigem_id, name FROM og_categorys";
+$result = mysql_query($sql);
 
-    while ($db_field = mysql_fetch_assoc($result)) {
-        $cn = utf8_encode(str_replace('  ', ' ', str_replace(',', '', $db_field['username'])));
-        $mail = $db_field['email'];
-        $uid = intval($db_field['uid']);
+while ($db_field = mysql_fetch_assoc($result)) {
+    $groupId = intval($db_field['optigem_id']);
+    $name = $db_field['name'];
 
-        $disable = intval($db_field['disable']) === 1;
-        $starttime = intval($db_field['starttime']);
-        $endtime = intval($db_field['endtime']);
-
-        $inactive = $disable || ($starttime !== 0 && $starttime > time()) || ($endtime !== 0 && $endtime < time());
-
-        $ou = $inactive ? 'inaktiv' : 'mitglieder,ou=benutzer';
-        $required_ou_base = $inactive ? 'ou=inaktiv,dc=feg-giessen,dc=de' : 'ou=benutzer,dc=feg-giessen,dc=de';
-        $dn = 'cn=' . $cn . ',ou=' . $ou . ',dc=feg-giessen,dc=de';
-
-        $filter = '(&(objectClass=inetOrgPerson)(|(syncUserId=' . $uid .')(cn=' . ldap_escape($cn) . ')))';
-        $sr = ldap_search($ldap_conn, 'dc=feg-giessen,dc=de', $filter);
-
-        $info = array();
-        $ldap_res = null;
-        if ($sr !== false) {
-            $info = ldap_get_entries($ldap_conn, $sr);
-            $ldap_res = ldap_first_entry($ldap_conn, $sr);
-            ldap_free_result($sr);
+    // check group exists in ldap
+    if(isset($groups[$groupId])) {
+        // compare name, rename
+        $name_old = $groups[$groupId]['cn'];
+        if (strcasecmp($name_old, $name) !== 0) {
+            log_msg("Renaming group $name... (old: $name_old)\n");
+            ldap_rename($ldap_conn, "cn=$name_old,$group_dn", $name, $group_dn, true);
+            $groups[$groupId]['cn'] = $name;
         }
-
-        if (!$info['count'] || $info['count'] == 0) {
-            log_msg("Adding... $cn \n");
-
-            $entry = array(
-                'objectClass' => array('top', 'person', 'organizationalPerson', 'inetOrgPerson', 'fegperson', 'simpleSecurityObject'),
-                'cn' => $cn,
-                'syncUserId' => $uid,
-                'userPassword' => ssha_encode($db_field['password'])
-            );
-
-            $success = ldap_add($ldap_conn, $dn, $entry);
-            if (!$success) {
-                log_msg("Error adding $cn\n" . print_r($entry, true) . "\n");
-            }
-        } else {
-            $old_dn = ldap_get_dn($ldap_conn, $ldap_res);
-
-            if (strEndsWith($old_dn, $required_ou_base) === false) {
-                log_msg("Moving to correct OU... (old: $old_dn)\n");
-                list($new_rdn, $new_parent) = explode(',', $dn, 2);
-                ldap_rename($ldap_conn, $old_dn, $new_rdn, $new_parent, true);
-            } else {
-                // overwrite assumed dn with actual dn (might be differently cased).
-                $dn = $old_dn;
-            }
-        }
-
-        // Check is username was renamed.
-        $old_cn = $info[0]['cn'][0];
-        if ($old_cn !== $cn) {
-            $old_dn = ldap_get_dn($ldap_conn, $ldap_res);
-            list(,$new_parent) = explode(',', $old_dn, 2);
-            ldap_rename($ldap_conn, $old_dn, 'cn=' . $cn, $new_parent, true);
-        }
-
-        if (!$inactive) {
-            $user_groups = splitInts($db_field['usergroup']);
-
-            foreach ($user_groups as $g) {
-                if (isset($groups[$g])) {
-                    $groups[$g]['members'][] = $dn;
-                }
-            }
-        }
+    } else {
+        // create group in ldap
+        log_msg("Adding group... $name \n");
 
         $entry = array(
-            'displayname' => $db_field['name'],
-            'typo3disabled' => $disable ? 'TRUE' : 'FALSE',
-
-            'street' => $db_field['address'],
-            'l' => $db_field['city'],
-            'postalcode' => $db_field['zip'],
-
-            'telephonenumber' => sanitizeSingleLine($db_field['telephone']),
-            'facsimiletelephonenumber' => sanitizeSingleLine($db_field['fax']),
-
-            'mail' => $mail
+            'objectClass' => array('top', 'groupOfNames', 'feggroup'),
+            'cn' => $name,
+            'syncGroupId' => $groupId
         );
 
-        $dateOfBirth = intval($db_field['date_of_birth']);
-        if ($dateOfBirth !== 0) {
-            $entry['dateofbirth'] = date("Ymd", $dateOfBirth);
-        } else if (isset($info[0]['dateofbirth'])) {
-            $entry['dateofbirth'] = array();
-        }
-
-        if ($starttime !== 0) {
-            $entry['startdate'] = date("YmdHis", $starttime) . "Z";
-        } else if (isset($info[0]['startdate'])) {
-            $entry['startdate'] = array();
-        }
-
-        if ($endtime !== 0) {
-            $entry['enddate'] = date("YmdHis", $endtime) . "Z";
-        } else if (isset($info[0]['enddate'])) {
-            $entry['enddate'] = array();
-        }
-
-        $country = $db_field['country'];
-        if ($country == '') {
-            $entry['c'] = $country;
+        $success = ldap_add($ldap_conn, $group_dn, $entry);
+        if (!$success) {
+            log_msg("Error adding group $name\n" . print_r($entry, true) . "\n");
         } else {
-            $entry['c'] = 'Germany';
+            $groups[$groupId] = array(
+                'cn' => $name,
+                'members' => array(),
+                'origMembers' => array()
+            );
         }
+    }
+}
+mysql_free_result($result);
 
-        foreach ($entry as $k => $v) {
-            if (empty($v)) {
-                if (isset($info[0][$k])) {
-                    $entry[$k] = array();
-                } else {
-                    unset($entry[$k]);
-                }
+$sql = "SELECT * FROM fe_users ORDER BY name";
+$result = mysql_query($sql);
+
+while ($db_field = mysql_fetch_assoc($result)) {
+    $cn = utf8_encode(str_replace('  ', ' ', str_replace(',', '', $db_field['username'])));
+    $mail = $db_field['email'];
+    $uid = intval($db_field['uid']);
+
+    $disable = intval($db_field['disable']) === 1;
+    $starttime = intval($db_field['starttime']);
+    $endtime = intval($db_field['endtime']);
+
+    $inactive = $disable || ($starttime !== 0 && $starttime > time()) || ($endtime !== 0 && $endtime < time());
+
+    $ou = $inactive ? 'inaktiv' : 'mitglieder,ou=benutzer';
+    $required_ou_base = $inactive ? 'ou=inaktiv,dc=feg-giessen,dc=de' : 'ou=benutzer,dc=feg-giessen,dc=de';
+    $dn = 'cn=' . $cn . ',ou=' . $ou . ',dc=feg-giessen,dc=de';
+
+    $filter = '(&(objectClass=inetOrgPerson)(|(syncUserId=' . $uid .')(cn=' . ldap_escape($cn) . ')))';
+    $sr = ldap_search($ldap_conn, 'dc=feg-giessen,dc=de', $filter);
+
+    $info = array();
+    $ldap_res = null;
+    if ($sr !== false) {
+        $info = ldap_get_entries($ldap_conn, $sr);
+        $ldap_res = ldap_first_entry($ldap_conn, $sr);
+        ldap_free_result($sr);
+    }
+
+    if (!$info['count'] || $info['count'] == 0) {
+        log_msg("Adding... $cn \n");
+
+        $entry = array(
+            'objectClass' => array('top', 'person', 'organizationalPerson', 'inetOrgPerson', 'fegperson', 'simpleSecurityObject'),
+            'cn' => $cn,
+            'syncUserId' => $uid,
+            'userPassword' => ssha_encode($db_field['password'])
+        );
+
+        $success = ldap_add($ldap_conn, $dn, $entry);
+        if (!$success) {
+            log_msg("Error adding $cn\n" . print_r($entry, true) . "\n");
+        }
+    } else {
+        $old_dn = ldap_get_dn($ldap_conn, $ldap_res);
+
+        if (strEndsWith($old_dn, $required_ou_base) === false) {
+            log_msg("Moving to correct OU... (old: $old_dn)\n");
+            list($new_rdn, $new_parent) = explode(',', $dn, 2);
+            ldap_rename($ldap_conn, $old_dn, $new_rdn, $new_parent, true);
+        } else {
+            // overwrite assumed dn with actual dn (might be differently cased).
+            $dn = $old_dn;
+        }
+    }
+
+    // Check if username was renamed.
+    $old_cn = $info[0]['cn'][0];
+    if ($old_cn !== $cn) {
+        $old_dn = ldap_get_dn($ldap_conn, $ldap_res);
+        list(,$new_parent) = explode(',', $old_dn, 2);
+        ldap_rename($ldap_conn, $old_dn, 'cn=' . $cn, $new_parent, true);
+    }
+
+    if (!$inactive) {
+        $user_groups = splitInts($db_field['og_categorys']);
+
+        foreach ($user_groups as $g) {
+            if (isset($groups[$g])) {
+                $groups[$g]['members'][] = $dn;
+            }
+        }
+    }
+
+    $entry = array(
+        'displayname' => $db_field['name'],
+        'typo3disabled' => $disable ? 'TRUE' : 'FALSE',
+
+        'street' => $db_field['address'],
+        'l' => $db_field['city'],
+        'postalcode' => $db_field['zip'],
+
+        'telephonenumber' => sanitizeSingleLine($db_field['telephone']),
+        'facsimiletelephonenumber' => sanitizeSingleLine($db_field['fax']),
+
+        'mail' => $mail
+    );
+
+    $dateOfBirth = intval($db_field['date_of_birth']);
+    if ($dateOfBirth !== 0) {
+        $entry['dateofbirth'] = date("Ymd", $dateOfBirth);
+    } else if (isset($info[0]['dateofbirth'])) {
+        $entry['dateofbirth'] = array();
+    }
+
+    if ($starttime !== 0) {
+        $entry['startdate'] = date("YmdHis", $starttime) . "Z";
+    } else if (isset($info[0]['startdate'])) {
+        $entry['startdate'] = array();
+    }
+
+    if ($endtime !== 0) {
+        $entry['enddate'] = date("YmdHis", $endtime) . "Z";
+    } else if (isset($info[0]['enddate'])) {
+        $entry['enddate'] = array();
+    }
+
+    $country = $db_field['country'];
+    if ($country == '') {
+        $entry['c'] = $country;
+    } else {
+        $entry['c'] = 'Germany';
+    }
+
+    foreach ($entry as $k => $v) {
+        if (empty($v)) {
+            if (isset($info[0][$k])) {
+                $entry[$k] = array();
             } else {
-                $entry[$k] = utf8_encode($v);
-                if (isset($info[0][$k]) && $info[0][$k][0] == $entry[$k]) {
-                    unset($entry[$k]);
-                }
+                unset($entry[$k]);
             }
-        }
-
-        if (count($entry) > 0) {
-            log_msg("Updating $cn\n " . print_r($entry, true));
-
-            $success = ldap_modify(
-                $ldap_conn,
-                $dn,
-                $entry);
-
-            if (!$success) {
-                log_msg("Error updating $cn\n" . ldap_error($ldap_conn) . "\n" . print_r($entry, true) . "\n");
+        } else {
+            $entry[$k] = utf8_encode($v);
+            if (isset($info[0][$k]) && $info[0][$k][0] == $entry[$k]) {
+                unset($entry[$k]);
             }
         }
     }
 
-    foreach ($groups as $group) {
+    if (count($entry) > 0) {
+        log_msg("Updating $cn\n " . print_r($entry, true));
 
-        $group_dn = 'cn=' . $group['cn'] . ',ou=gruppen,dc=feg-giessen,dc=de';
+        $success = ldap_modify(
+            $ldap_conn,
+            $dn,
+            $entry);
 
-        $new_members = is_array($group['members']) ? array_diff($group['members'], $group['origMembers']) : array();
-        $removed_members = is_array($group['members']) ? array_diff($group['origMembers'], $group['members']) : $group['origMembers'];
-
-        if (count($new_members) > 0) {
-
-            log_msg("New group members for " . $group['cn'] . "\n" . print_r($new_members, true));
-
-            ldap_mod_add(
-                $ldap_conn,
-                $group_dn,
-                array('member' => array_values($new_members)));
-        }
-
-        if (count($removed_members) > 0) {
-
-            log_msg("Deleted group members for " . $group['cn'] . "\n" . print_r($removed_members, true));
-
-            ldap_mod_del(
-                $ldap_conn,
-                $group_dn,
-                array('member' => array_values($removed_members)));
+        if (!$success) {
+            log_msg("Error updating $cn\n" . ldap_error($ldap_conn) . "\n" . print_r($entry, true) . "\n");
         }
     }
-
-    mysql_close($db_handle);
-
-} else {
-    print "Database NOT Found ";
-    mysql_close($db_handle);
 }
 
+foreach ($groups as $group) {
+
+    $group_dn = 'cn=' . $group['cn'] . ',ou=gruppen,dc=feg-giessen,dc=de';
+
+    $new_members = is_array($group['members']) ? array_diff($group['members'], $group['origMembers']) : array();
+    $removed_members = is_array($group['members']) ? array_diff($group['origMembers'], $group['members']) : $group['origMembers'];
+
+    if (count($new_members) > 0) {
+
+        log_msg("New group members for " . $group['cn'] . "\n" . print_r($new_members, true));
+
+        ldap_mod_add(
+            $ldap_conn,
+            $group_dn,
+            array('member' => array_values($new_members)));
+    }
+
+    if (count($removed_members) > 0) {
+
+        log_msg("Deleted group members for " . $group['cn'] . "\n" . print_r($removed_members, true));
+
+        ldap_mod_del(
+            $ldap_conn,
+            $group_dn,
+            array('member' => array_values($removed_members)));
+    }
+}
+
+mysql_close($db_handle);
 ldap_close($ldap_conn);
 
 ?>
