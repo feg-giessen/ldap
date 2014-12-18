@@ -9,11 +9,14 @@ olcAccess: {0}to attrs=userPassword,shadowLastChange
     by dn.children="ou=services,dc=feg-giessen,dc=de" read
     by * none
 olcAccess: {1}to dn.base="" 
+    by dn="cn=admin,dc=feg-giessen,dc=de" write
     by * read
 olcAccess: {2}to dn.base="dc=de" 
+    by dn="cn=admin,dc=feg-giessen,dc=de" write
     by group.exact="cn=Verzeichnis-Admins,ou=gruppen,dc=feg-giessen,dc=de" write
     by dn.children="ou=services,dc=feg-giessen,dc=de" read
 olcAccess: {3}to dn.subtree="dc=feg-giessen,dc=de" 
+    by dn="cn=admin,dc=feg-giessen,dc=de" write
     by dn="cn=ldapsync,ou=services,dc=feg-giessen,dc=de" write
     by group.exact="cn=Verzeichnis-Admins,ou=gruppen,dc=feg-giessen,dc=de" write
     by dn.children="ou=services,dc=feg-giessen,dc=de" read
