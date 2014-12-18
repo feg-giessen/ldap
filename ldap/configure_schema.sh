@@ -30,4 +30,4 @@ echo "sizelimit..."
 ldapmodify -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/sizelimit.ldif
 
 echo "certs.."
-#ldapmodify -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/certinfo.ldif
+ldapmodify -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/certinfo.ldif
