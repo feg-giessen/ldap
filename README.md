@@ -29,10 +29,21 @@ Execute `install.sh` as root
     
     # configure ldap
     # note: if on Ubuntu >= 12 -> replace /etc/ldap/schema/db.ldif with db_ubuntu12.ldif
-    sh /etc/ldap/configure_schema.sh
+    sudo sh /etc/ldap/configure_schema.sh
 
     # import basic schema
-    sh /etc/ldap/import_data.sh
+    sudo sh /etc/ldap/import_data.sh
+
+### Edit port bindings
+
+Edit the file `/etc/default/slapd`
+
+(`sudo vim /etc/default/slapd`)
+
+Set `SLAPD_SERVICES`:
+
+    SLAPD_SERVICES="ldap://127.0.0.1:389/ ldaps:/// ldapi:///"
+
 
 ### Change LDAP passwords
 
