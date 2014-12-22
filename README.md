@@ -13,9 +13,15 @@ LDAP schema and tools for member directory.
 
 ### Download configuration files and install ldap
 
-Execute `install.sh` as root
+Download `ldap/install.sh` and execute it on the target server as root
 
     sudo sh install.sh
+
+*OR*
+
+Download the `ldap` folder to /etc/ldap on your server and install *openldap* using `sudo apt-get install slapd ldap-utils`.
+
+**Note:** Keep old version of config files when asked!
     
 ### Install ssl certificate
 
