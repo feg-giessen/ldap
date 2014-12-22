@@ -20,6 +20,7 @@ Execute `install.sh` as root
 ### Install ssl certificate
 
 - Copy certificate to `/etc/ldap/ssl/[filename].crt`
+- Convert the private key to *PKCS#1*: `openssl rsa -in mykey.old -out [filename].key`
 - Copy private key to `/etc/ldap/ssl/[filename].key`
 - Update `/etc/ldap/schema/certinfo.ldif` with path to certificate (`olcTLSCertificateFile`) and path to private key (`olcTLSCertificateKeyFile`).
 - Apply ownership: `sudo chown openldap:openldap /etc/ldap/ssl/*`
