@@ -25,6 +25,11 @@ attributetype ( 2.25.9707085203246740429389532100497360155.6
       EQUALITY booleanMatch
       SINGLE-VALUE )
 
+attributetype ( 2.25.9707085203246740429389532100497360155.7
+      NAME 'syncUserSource'
+      SYNTAX '1.3.6.1.4.1.1466.115.121.1.15'
+      SINGLE-VALUE )
+
 attributetype ( 1.3.6.1.4.1.5427.1.389.4.2
       NAME ( 'dateOfBirth' )
       DESC 'Date of birth (format YYYYMMDD, only numeric chars)'
@@ -36,4 +41,4 @@ attributetype ( 1.3.6.1.4.1.5427.1.389.4.2
 objectclass ( 1.2.276.113556.1.5.9 NAME 'fegperson'
         DESC 'FeG Person'
         SUP inetOrgPerson STRUCTURAL
-        MAY ( startDate $ endDate $ initialPassword $ dateOfBirth $ syncUserId $ typo3Disabled ))
+        MAY ( startDate $ endDate $ initialPassword $ dateOfBirth $ syncUserId $ syncGroupSource $ typo3Disabled ))

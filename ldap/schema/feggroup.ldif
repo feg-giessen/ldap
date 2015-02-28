@@ -6,9 +6,13 @@ olcAttributeTypes: ( 2.25.9707085203246740429389532100497360155.5
     EQUALITY integerMatch 
     SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
     SINGLE-VALUE )    
+olcAttributeTypes: ( 2.25.9707085203246740429389532100497360155.8
+    NAME 'syncGroupSource'
+    SYNTAX '1.3.6.1.4.1.1466.115.121.1.15'
+    SINGLE-VALUE )    
 olcObjectClasses: ( 1.2.276.113556.1.5.8 
     NAME 'feggroup' 
     DESC 'a group of users' 
     SUP top 
     AUXILIARY 
-    MAY syncGroupId )
+    MAY ( syncGroupId $ syncGroupSource ) )
