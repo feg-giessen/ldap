@@ -17,6 +17,7 @@ objectClass: feggroup
 objectClass: groupOfNames
 objectClass: top
 syncGroupId: 5
+syncGroupSource: fe_groups
 cn: Gemeindeleitung
 
 dn: cn=FeG Intranet,ou=gruppen,dc=feg-giessen,dc=de
@@ -25,6 +26,7 @@ objectClass: feggroup
 objectClass: groupOfNames
 objectClass: top
 syncGroupId: 6
+syncGroupSource: fe_groups
 cn: FeG Intranet
 
 dn: cn=AK Webportal,ou=gruppen,dc=feg-giessen,dc=de
@@ -33,6 +35,7 @@ objectClass: feggroup
 objectClass: groupOfNames
 objectClass: top
 syncGroupId: 20
+syncGroupSource: fe_groups
 cn: AK Webportal
 
 dn: cn=AK 2plus,ou=gruppen,dc=feg-giessen,dc=de
@@ -41,6 +44,7 @@ objectClass: feggroup
 objectClass: groupOfNames
 objectClass: top
 syncGroupId: 21
+syncGroupSource: fe_groups
 cn: AK 2plus
 
 dn: cn=AK Ausländerarbeit,ou=gruppen,dc=feg-giessen,dc=de
@@ -49,6 +53,7 @@ objectClass: feggroup
 objectClass: groupOfNames
 objectClass: top
 syncGroupId: 22
+syncGroupSource: fe_groups
 cn: AK Ausländerarbeit
 
 dn: cn=Wohnungsvermittlung,ou=gruppen,dc=feg-giessen,dc=de
@@ -57,6 +62,7 @@ objectClass: feggroup
 objectClass: groupOfNames
 objectClass: top
 syncGroupId: 23
+syncGroupSource: fe_groups
 cn: Wohnungsvermittlung
 
 dn: cn=KG-Koordination,ou=gruppen,dc=feg-giessen,dc=de
@@ -65,6 +71,7 @@ objectClass: feggroup
 objectClass: groupOfNames
 objectClass: top
 syncGroupId: 24
+syncGroupSource: fe_groups
 cn: KG-Koordination
 
 dn: cn=Gottesdienstleiter,ou=gruppen,dc=feg-giessen,dc=de
@@ -73,6 +80,7 @@ objectClass: feggroup
 objectClass: groupOfNames
 objectClass: top
 syncGroupId: 25
+syncGroupSource: fe_groups
 cn: Gottesdienstleiter
 
 dn: cn=AK Präsentation,ou=gruppen,dc=feg-giessen,dc=de
@@ -81,6 +89,7 @@ objectClass: feggroup
 objectClass: groupOfNames
 objectClass: top
 syncGroupId: 27
+syncGroupSource: fe_groups
 cn: AK Präsentation
 
 dn: cn=AK Lichttechnik,ou=gruppen,dc=feg-giessen,dc=de
