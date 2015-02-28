@@ -2,6 +2,7 @@
 
 $config = array(
     'img_base_path' => '/home/myuser/images',
+    'img_wildcard' => '*.jpg',
 
     'ldap_server' => 'localhost',
     'ldap_port' => 389,
