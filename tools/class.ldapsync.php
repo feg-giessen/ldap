@@ -214,14 +214,14 @@ class ldapsync {
      * @param array $ogCategories
      * @param string $groupDn
      */
-    public function importOptigemCategories(array $ldapGroups, array $ogCategories, $groupDn) {
+    public function importOptigemCategories(array &$ldapGroups, array $ogCategories, $groupDn) {
         foreach($ogCategories as $id => $item) {
             // check group exists in ldap
             if(isset($ldapGroups['all'][$id])) {
                 // compare name, rename
                 $group = $ldapGroups['all'][$id]['cn'];
                 $group['cn'] = $this->renameGroup($group, $item['name'], $groupDn);
-            } else if (isset($ldapGroup['og_categories'][$id])) {
+            } else if (isset($ldapGroups['og_categories'][$id])) {
                 // compare name, rename
                 $group = $ldapGroups['og_categories'][$id];
                 $group['cn'] = $this->renameGroup($group, $item['name'], $groupDn);
@@ -241,7 +241,7 @@ class ldapsync {
                 if (!$success) {
                     $this->log_msg("Error adding group $name\n" . json_encode($entry, JSON_PRETTY_PRINT) . "\n", E_ERROR);
                 } else {
-                    $ldapGroup['og_categories'][$id] = array(
+                    $ldapGroups['og_categories'][$id] = array(
                         'cn' => $name,
                         'members' => array(),
                         'origMembers' => array()
