@@ -18,7 +18,7 @@ $groups = $ldapSync->getLdapSyncGroups('groupOfNames', GROUP_DN);
 $ogCategories = $ldapSync->getOptigemCategories();
 $ldapSync->importOptigemCategories($groups, $ogCategories, GROUP_DN);
 
-$ldapSync->syncUsers($groups, 'ou=benutzer', 'ou=inaktiv', 'dc=feg-giessen,dc=de');
+$ldapSync->syncUsers($groups, $ogCategories, 'ou=benutzer', 'ou=inaktiv', 'dc=feg-giessen,dc=de');
 
 foreach ($groups as $source => $groupList) {
     $ldapSync->syncGroupData($groupList, GROUP_DN);
