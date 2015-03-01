@@ -357,11 +357,12 @@ class ldapsync {
 
     /**
      * @param array $groups
+     * @param array $ogCategories
      * @param string $dnActiveUsers
      * @param string $dnInactiveUsers
      * @param string $baseDn
      */
-    public function syncUsers(array &$groups, $dnActiveUsers, $dnInactiveUsers, $baseDn) {
+    public function syncUsers(array &$groups, array $ogCategories, $dnActiveUsers, $dnInactiveUsers, $baseDn) {
 
         /** @var mysqli_result $result */
         $result = $this->getUsers();
@@ -371,8 +372,21 @@ class ldapsync {
             $user = new user($db_field);
 
             // get base dn
-            $ou = $user->isInactive() ? 'ou=inaktiv' : 'ou=mitglieder,ou=benutzer';
-            $required_ou_base = ($user->isInactive() ? $dnInactiveUsers : $dnActiveUsers) . ',' . $baseDn;
+            if ($user->isInactive()) {
+                $ou = $dnInactiveUsers;
+                $required_ou_base = $dnInactiveUsers . ',' . $baseDn;
+            } else {
+                if ($user->hasOgCategory($ogCategories, 'Mitglied')) {
+                    $ou = 'ou=mitglieder,' . $dnActiveUsers;
+                } else {
+                    // TODO: default is "extern" in future.
+                    // $ou = 'ou=extern,' . $dnActiveUsers;
+                    $ou = 'ou=mitglieder,' . $dnActiveUsers;
+                }
+
+                $required_ou_base = $dnActiveUsers . ',' . $baseDn;
+            }
+
             $dn = "cn=$user->cn,$ou,$baseDn";
 
             $ldap_user = null;
@@ -623,6 +637,8 @@ class user {
 
     public $disable;
 
+    private $ogCategories = null;
+
     function __construct(array $db_field) {
         $this->data = $db_field;
 
@@ -648,10 +664,27 @@ class user {
     }
 
     public function getOgCategories() {
-        if (!isset($this->data['og_categories']))
-            return array();
+        if ($this->ogCategories === null) {
+            if (!isset($this->data['og_categories'])) {
+                $this->ogCategories = array();
+            } else {
+                $this->ogCategories = array_unique($this->splitIntegers($this->data['og_categories']));
+            }
+        }
 
-        return array_unique($this->splitIntegers($this->data['og_categories']));
+        return $this->ogCategories;
+    }
+
+    public function hasOgCategory(array $ogCategories, $name) {
+        $item = null;
+        foreach ($ogCategories as $id => $category) {
+            if ($category['name'] == $name) {
+                $item = $category;
+                break;
+            }
+        }
+
+        return array_search($item['id'], $this->getOgCategories()) !== false;
     }
 
     /**
