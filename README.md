@@ -51,6 +51,9 @@ Set `SLAPD_SERVICES`:
 
     SLAPD_SERVICES="ldap://127.0.0.1:389/ ldaps:/// ldapi:///"
 
+Restart the LDAP service:
+
+    service slapd restart
 
 ### Change LDAP passwords
 
