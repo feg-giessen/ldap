@@ -15,6 +15,8 @@ $config = array(
     'db_name' => 'mydb',
     'db_user' => 'myuser',
     'db_pw' => '123 password',
+    
+    'logLevel' => E_ERROR
 );
 
 ?>

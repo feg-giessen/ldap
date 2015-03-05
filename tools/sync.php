@@ -10,7 +10,7 @@ function log_msg($message) {
 }
 
 require_once('class.ldapsync.php');
-$ldapSync = new ldapsync($config, 'log_msg', E_ERROR);
+$ldapSync = new ldapsync($config, 'log_msg', $config['logLevel']);
 
 const GROUP_DN = 'ou=gruppen,dc=feg-giessen,dc=de';
 $groups = $ldapSync->getLdapSyncGroups('groupOfNames', GROUP_DN);

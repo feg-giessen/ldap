@@ -10,7 +10,7 @@ if (!isset($config))
     die('No configuration set.');
 
 require_once('class.ldapsync.php');
-$ldapSync = new ldapsync($config, 'log_msg', E_ERROR);
+$ldapSync = new ldapsync($config, 'log_msg', $config['logLevel']);
 
 // list all image files.
 $count = $ldapSync->importPhotos(
