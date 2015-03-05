@@ -9,6 +9,8 @@ $config = array(
     'ldap_user' => 'cn=sync,dc=example,dc=com',
     'ldap_pw' => 'the password',
 
+    'syncPasswords' => false,
+
     'db_server' => '127.0.0.1',
     'db_name' => 'mydb',
     'db_user' => 'myuser',

@@ -361,8 +361,9 @@ class ldapsync {
      * @param string $dnActiveUsers
      * @param string $dnInactiveUsers
      * @param string $baseDn
+     * @param bool $syncPasswords
      */
-    public function syncUsers(array &$groups, array $ogCategories, $dnActiveUsers, $dnInactiveUsers, $baseDn) {
+    public function syncUsers(array &$groups, array $ogCategories, $dnActiveUsers, $dnInactiveUsers, $baseDn, $syncPasswords=false) {
 
         /** @var mysqli_result $result */
         $result = $this->getUsers();
@@ -400,7 +401,7 @@ class ldapsync {
                     'cn' => $user->cn,
                     'syncUserId' => $user->uid,
                     'syncUserSource' => 'fe_users',
-                    'userPassword' => $this->sshaEncode($user->data['password'])
+                    'userPassword' => $user->getSshaPassword()
                 );
 
                 $success = ldap_add($this->ldapConnection, $dn, $entry);
@@ -444,7 +445,7 @@ class ldapsync {
                 }
             }
 
-            $entry = $this->getLdapEntry($user, 'Germany');
+            $entry = $this->getLdapEntry($user, 'Germany', $syncPasswords);
             $this->cleanupLdapEntry($ldap_user, $entry);
 
             if (count($entry) > 0) {
@@ -464,9 +465,10 @@ class ldapsync {
     /**
      * @param user $user
      * @param string $defaultCountry
+     * @param bool $syncPasswords
      * @return array
      */
-    private function getLdapEntry(user $user, $defaultCountry) {
+    private function getLdapEntry(user $user, $defaultCountry, $syncPasswords=false) {
         $entry = array(
             'displayname' => $user->data['name'],
             'typo3disabled' => $user->disable ? 'TRUE' : 'FALSE',
@@ -480,6 +482,10 @@ class ldapsync {
 
             'mail' => $user->data['email']
         );
+
+        if ($syncPasswords) {
+            $entry['userpassword'] = $user->getSshaPassword();
+        }
 
         $dateOfBirth = intval($user->data['date_of_birth']);
         if ($dateOfBirth !== 0) {
@@ -584,19 +590,6 @@ class ldapsync {
     }
 
     /**
-     * @param string $text
-     * @return string
-     */
-    private function sshaEncode($text) {
-        $salt = '';
-        for ($i=1; $i<=10; $i++) {
-            $salt .= substr('0123456789abcdef', rand(0, 15), 1);
-        }
-        $hash = '{SSHA}' . base64_encode(pack('H*', sha1($text . $salt)) . $salt);
-        return $hash;
-    }
-
-    /**
      * @param string $str
      * @return string
      */
@@ -648,6 +641,10 @@ class user {
         $this->disable = intval($db_field['disable']) === 1;
         $this->startTime = intval($db_field['starttime']);
         $this->endTime = intval($db_field['endtime']);
+    }
+
+    public function getSshaPassword() {
+        return $this->sshaEncode($this->data['password']);
     }
 
     public function isInactive(){
@@ -707,5 +704,18 @@ class user {
         }
 
         return $result;
+    }
+
+    /**
+     * @param string $text
+     * @return string
+     */
+    private function sshaEncode($text) {
+        $salt = '';
+        for ($i=1; $i<=10; $i++) {
+            $salt .= substr('0123456789abcdef', rand(0, 15), 1);
+        }
+        $hash = '{SSHA}' . base64_encode(pack('H*', sha1($text . $salt)) . $salt);
+        return $hash;
     }
 }
