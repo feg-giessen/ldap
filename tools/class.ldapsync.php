@@ -5,6 +5,10 @@
  * Date: 27.02.2015
  * Time: 15:23
  */
+ 
+ if (!defined('JSON_PRETTY_PRINT')) {
+	define('JSON_PRETTY_PRINT', 0);
+ }
 
 if (function_exists("ldap_escape") === false)
 {
@@ -201,7 +205,7 @@ class ldapsync {
             $ogCategories[$groupId] = array(
                 'id' => $groupId,
                 'name' => $name,
-                'syncGroupSource' => 'og_categories'
+                'syncgroupsource' => 'og_categories'
             );
         }
         $result->free();
@@ -227,17 +231,17 @@ class ldapsync {
                 $group['cn'] = $this->renameGroup($group, $item['name'], $groupDn);
             } else {
                 // create group in ldap
-                $name = $item['name'];
+                $name = utf8_encode(str_replace('  ', ' ', str_replace(',', '', $item['name'])));
                 $this->log_msg("Adding group... $name \n", E_NOTICE);
 
                 $entry = array(
-                    'objectClass' => array('top', 'groupOfNames', 'feggroup'),
+                    'objectclass' => array('top', 'groupOfNames', 'feggroup'),
                     'cn' => $name,
-                    'syncGroupId' => $id,
-                    'syncGroupSource' => 'og_categories'
+                    'syncgroupid' => $id,
+                    'syncgroupsource' => 'og_categories'
                 );
 
-                $success = ldap_add($this->ldapConnection, $groupDn, $entry);
+                $success = ldap_add($this->ldapConnection, "cn=$name,$groupDn", $entry);
                 if (!$success) {
                     $this->log_msg("Error adding group $name\n" . json_encode($entry, JSON_PRETTY_PRINT) . "\n", E_ERROR);
                 } else {
@@ -397,16 +401,20 @@ class ldapsync {
                 $this->log_msg("Adding... $user->cn\n", E_NOTICE);
 
                 $entry = array(
-                    'objectClass' => array('top', 'person', 'organizationalPerson', 'inetOrgPerson', 'fegperson', 'simpleSecurityObject'),
+                    'objectclass' => array('top', 'person', 'organizationalPerson', 'inetOrgPerson', 'fegperson', 'simpleSecurityObject'),
                     'cn' => $user->cn,
-                    'syncUserId' => $user->uid,
-                    'syncUserSource' => 'fe_users',
-                    'userPassword' => $user->getSshaPassword()
+                    'syncuserid' => $user->uid,
+                    'syncusersource' => 'fe_users',
+                    'userpassword' => $user->getSshaPassword()
                 );
 
                 $success = ldap_add($this->ldapConnection, $dn, $entry);
                 if (!$success) {
                     $this->log_msg("Error adding $user->cn\n" . json_encode($entry, JSON_PRETTY_PRINT) . "\n", E_ERROR);
+                    continue;
+                } else {
+                    $ldap_user_dn = $dn;
+                    $ldap_user = $entry;
                 }
             } else {
                 if ($this->strEndsWith($ldap_user_dn, $required_ou_base) === false) {
