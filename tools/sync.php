@@ -1,5 +1,8 @@
 <?php
 
+// Report simple running errors
+error_reporting(E_ERROR);
+
 require('ldap_config.php');
 
 if (!isset($config))

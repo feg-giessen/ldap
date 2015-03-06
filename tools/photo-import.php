@@ -1,5 +1,8 @@
 <?php
 
+// Report simple running errors
+error_reporting(E_ERROR);
+
 function log_msg($message) {
     echo $message;
 }
@@ -17,5 +20,5 @@ $count = $ldapSync->importPhotos(
     'dc=feg-giessen,dc=de',
     $config['img_base_path'] . "/" . $config['img_wildcard']);
 
-log_msg("Imported $count jpeg photos.\n");
+// log_msg("Imported $count jpeg photos.\n");
 ?>
