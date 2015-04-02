@@ -29,5 +29,8 @@ ldapadd -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/memberof_config.ldif
 echo "sizelimit..."
 ldapmodify -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/sizelimit.ldif
 
+echo "checkpoints..."
+ldapmodify -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/checkpoint.ldif
+
 echo "certs.."
 ldapmodify -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/certinfo.ldif

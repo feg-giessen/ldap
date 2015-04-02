@@ -55,6 +55,14 @@ Restart the LDAP service:
 
     service slapd restart
 
+### Edit DB_CONFIG
+
+Edit the file `/var/lib/ldap/DB_CONFIG`
+
+Insert the following line at the end:
+
+    set_flags DB_LOG_AUTOREMOVE 
+
 ### Change LDAP passwords
 
 Change all passwords preset in this configuration using `sudo sh /etc/ldap/change_passwords.sh`
