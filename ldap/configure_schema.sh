@@ -20,7 +20,6 @@ ldapadd -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/feggroup.ldif -c
 
 echo "db..."
 ldapadd -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/db.ldif
-ldapmodify -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/access_rights.ldif
 
 echo "memberOf overlay..."
 ldapadd -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/memberof_add.ldif

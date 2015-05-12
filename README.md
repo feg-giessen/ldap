@@ -41,6 +41,9 @@ Download the `ldap` folder to /etc/ldap on your server and install *openldap* us
     # import basic schema
     sudo sh /etc/ldap/import_data.sh
 
+    # apply access rights
+    sudo sh /etc/ldap/configure_access.sh
+
 ### Edit port bindings
 
 Edit the file `/etc/default/slapd`
