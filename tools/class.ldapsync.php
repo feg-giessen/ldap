@@ -305,9 +305,20 @@ class ldapsync {
         if ($user === null)
             return false;
 
+        $fileTime = filemtime($jpegPath);
+
+        // Skip file if not changed...
+        if (isset($user['phototimestamp']) && isset($user['phototimestamp'][0])) {
+            $timestamp = $this->getTimestamp($user['phototimestamp'][0]);
+
+            if ($timestamp >= $fileTime)
+                return false;
+        }
+
         $f = fopen($jpegPath, 'r');
         $entry = array(
-            'jpegPhoto' => fread($f, filesize($jpegPath))
+            'jpegPhoto' => fread($f, filesize($jpegPath)),
+            'phototimestamp' => $this->getLdapDate($fileTime),
         );
         fclose($f);
 
@@ -503,13 +514,13 @@ class ldapsync {
         }
 
         if ($user->startTime !== 0) {
-            $entry['startdate'] = date('YmdHis', $user->startTime) . 'Z';
+            $entry['startdate'] = $this->getLdapDate($user->startTime);
         } else if (isset($info[0]['startdate'])) {
             $entry['startdate'] = array();
         }
 
         if ($user->endTime !== 0) {
-            $entry['enddate'] = date('YmdHis', $user->endTime) . 'Z';
+            $entry['enddate'] = $this->getLdapDate($user->endTime);
         } else if (isset($info[0]['enddate'])) {
             $entry['enddate'] = array();
         }
@@ -604,6 +615,23 @@ class ldapsync {
     private function sanitizeSingleLine($str) {
         $parts = preg_split('/\r|\r\n|\n/', $str);
         return is_array($parts) && count($parts) > 0 ? $parts[0] : $str;
+    }
+
+    /**
+     * @param $timestamp int php/unix timestamp
+     * @return string Date/Time for LDAP field
+     */
+    private function getLdapDate($timestamp) {
+        return date('YmdHis', $timestamp) . 'Z';
+    }
+
+    /**
+     * @param $ldapDate string Date/Time in format "YmdHis".
+     * @return int
+     */
+    private function getTimestamp($ldapDate) {
+        $dateTime = DateTime::createFromFormat('YmdHis', $ldapDate);
+        return $dateTime ? $dateTime->getTimestamp() : 0;
     }
 
     /**

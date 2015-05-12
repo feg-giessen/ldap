@@ -33,10 +33,14 @@ olcAttributeTypes: ( 1.3.6.1.4.1.5427.1.389.4.2
     EQUALITY numericStringMatch 
     SUBSTR numericStringSubstringsMatch 
     SYNTAX 1.3.6.1.4.1.1466.115.121.1.36
-    SINGLE-VALUE )    
+    SINGLE-VALUE )
+olcAttributeTypes: ( 2.25.9707085203246740429389532100497360155.9
+    NAME 'photoTimestamp'
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 
+    SINGLE-VALUE ) 
 olcObjectClasses: ( 1.2.276.113556.1.5.9 
     NAME 'fegperson' 
     DESC 'FeG Person'
     SUP inetOrgPerson 
     STRUCTURAL 
-    MAY ( startDate $ endDate $ initialPassword $ dateOfBirth $ syncUserId $ syncUserSource $ typo3Disabled ) )
+    MAY ( startDate $ endDate $ initialPassword $ dateOfBirth $ syncUserId $ syncUserSource $ typo3Disabled $ photoTimestamp ) )
