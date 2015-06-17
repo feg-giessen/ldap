@@ -114,7 +114,7 @@ class ldapsync {
         if (!$success) {
             $this->log_msg('LDAP connection failed', E_ERROR);
             ldap_close($ldap_conn);
-            die('LDAP connection failed');
+            die('LDAP connection failed\n');
         }
 
         return $ldap_conn;
@@ -253,6 +253,135 @@ class ldapsync {
                 }
             }
         }
+    }
+
+    public function syncTypo3Users($baseDn) {
+        // Get all ldap groups from TYPO3
+        $sql = "SELECT uid,tx_igldapssoauth_dn from fe_groups WHERE tx_igldapssoauth_dn IS NOT NULL AND tx_igldapssoauth_dn != ''";
+        $result = $this->db->query($sql);
+        $groups = array();
+
+        while ($db_field = $result->fetch_assoc()) {
+            $groups[utf8_encode($db_field['tx_igldapssoauth_dn'])] = intval($db_field['uid']);
+            $this->log_msg('Found group ' . $db_field['tx_igldapssoauth_dn'], E_NOTICE);
+        }
+
+        $result->free();
+        $result->close();
+
+        //
+        // Update 'entryUUID' fields for new users in TYPO3 database.
+
+        $sql = "SELECT * from fe_users WHERE tx_igldapssoauth_dn != '' and ldap_entryuuid IS NULL";
+        $result = $this->db->query($sql);
+
+        $sql = 'UPDATE fe_users SET ldap_entryuuid=? WHERE uid=?';
+        $updateStatement = $this->db->prepare($sql);
+
+        while ($db_field = $result->fetch_assoc()) {
+            list($cn, $dn) = explode(',', $db_field['tx_igldapssoauth_dn'], 2);
+
+            $ldap_entry = null;
+            $cn = ldap_escape(utf8_encode(substr($cn, 3)));
+            $matchedDn = $this->getLdapUserFilter($dn, $ldap_entry, "(&(cn=$cn))", array('cn', 'entryuuid'));
+
+            $dnForCompare = utf8_encode($db_field['tx_igldapssoauth_dn']);
+            if ($matchedDn === $dnForCompare) {
+                $updateStatement->bind_param('si', $ldap_entry['entryuuid'][0], $db_field['uid']);
+                $updateStatement->execute();
+                $updateStatement->reset();
+
+                $this->log_msg('Updated entryUUID for ' . $db_field['username'], E_NOTICE);
+            } else {
+                $this->log_msg('No match: ' . $dnForCompare, E_WARNING);
+                $this->log_msg('No match: ' . $matchedDn, E_WARNING);
+            }
+        }
+
+        $updateStatement->close();
+
+        $result->free();
+        $result->close();
+
+        $sql = "SELECT * from fe_users WHERE ldap_entryuuid IS NOT NULL AND ldap_entryuuid != ''";
+        $result = $this->db->query($sql);
+
+        //
+        // Update 'DN' fields and 'usergroup' fields in TYPO3 database.
+
+        $sql = 'UPDATE fe_users SET tx_igldapssoauth_dn=? WHERE uid=?';
+        $updateStatement = $this->db->prepare($sql);
+
+        $sql = 'UPDATE fe_users SET usergroup=? WHERE uid=?';
+        $updateStatementGroups = $this->db->prepare($sql);
+
+        while ($db_field = $result->fetch_assoc()) {
+            $typo3User = new user($db_field);
+
+            $entryuuid = $db_field['ldap_entryuuid'];
+            $ldap_entry = null;
+            $matchedDn = $this->getLdapUserFilter($baseDn, $ldap_entry, "(&(entryuuid=$entryuuid))", array('cn', 'memberof'));
+
+            if ($ldap_entry != null) {
+                $updateStatement->bind_param('si', $matchedDn, $typo3User->uid);
+                $updateStatement->execute();
+                $updateStatement->reset();
+
+                $this->log_msg('Updated entryUUID for ' . $typo3User->cn, E_NOTICE);
+
+                if (array_key_exists('memberof', $ldap_entry)) {
+                    $typo3Groups = $typo3User->getUserGroups();
+
+                    foreach ($ldap_entry['memberof'] as $key => $groupDn) {
+                        if (array_key_exists($groupDn, $groups)) {
+                            $typo3Groups[] = $groups[$groupDn];
+                        }
+                    }
+
+                    $typo3Groups = array_unique($typo3Groups);
+
+                    $updateStatementGroups->bind_param('si', implode(',', $typo3Groups), $typo3User->uid);
+                    $updateStatementGroups->execute();
+                    $updateStatementGroups->reset();
+
+                    $this->log_msg('Updated groups for ' . $typo3User->cn, E_NOTICE);
+                }
+            }
+
+        }
+
+        $updateStatement->close();
+        $updateStatementGroups->close();
+
+        $result->free();
+        $result->close();
+    }
+
+    /**
+     * @param string $baseDn
+     * @param array $entry
+     * @param string $filter
+     * @param array $parameters
+     * @return null|string  full dn
+     */
+    private function getLdapUserFilter($baseDn, &$entry, $filter, array $parameters = null) {
+        $sr = ldap_search($this->ldapConnection, $baseDn, $filter, $parameters);
+
+        $info = null;
+        $ldap_res = null;
+        if ($sr !== false) {
+            $info = ldap_get_entries($this->ldapConnection, $sr);
+            $ldap_res = ldap_first_entry($this->ldapConnection, $sr);
+            ldap_free_result($sr);
+
+            if ($info['count'] && $info['count'] !== 0) {
+                $entry = $info[0];
+                return ldap_get_dn($this->ldapConnection, $ldap_res);
+            }
+        }
+
+        $entry = null;
+        return null;
     }
 
     /**
