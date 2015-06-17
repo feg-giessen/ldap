@@ -323,7 +323,7 @@ class ldapsync {
             $matchedDn = $this->getLdapUserFilter($baseDn, $ldap_entry, "(&(entryuuid=$entryuuid))", array('cn', 'memberof'));
 
             if ($ldap_entry != null) {
-                $updateStatement->bind_param('si', $matchedDn, $typo3User->uid);
+                $updateStatement->bind_param('si', utf8_decode($matchedDn), $typo3User->uid);
                 $updateStatement->execute();
                 $updateStatement->reset();
 
