@@ -217,8 +217,11 @@ class ldapsync {
      * @param array $ldapGroups
      * @param array $ogCategories
      * @param string $groupDn
+     * @param array $defaultParentGroups
      */
-    public function importOptigemCategories(array &$ldapGroups, array $ogCategories, $groupDn) {
+    public function importOptigemCategories(array &$ldapGroups, array $ogCategories, $groupDn, array $defaultParentGroups) {
+        $newGroups = array();
+
         foreach($ogCategories as $id => $item) {
             // check group exists in ldap
             if(isset($ldapGroups['all'][$id])) {
@@ -241,16 +244,27 @@ class ldapsync {
                     'syncgroupsource' => 'og_categories'
                 );
 
-                $success = ldap_add($this->ldapConnection, "cn=$name,$groupDn", $entry);
+                $dn = "cn=$name,$groupDn";
+                $success = ldap_add($this->ldapConnection, $dn, $entry);
                 if (!$success) {
                     $this->log_msg("Error adding group $name\n" . json_encode($entry, JSON_PRETTY_PRINT) . "\n", E_ERROR);
                 } else {
+                    $newGroups[] = $dn;
                     $ldapGroups['og_categories'][$id] = array(
                         'cn' => $name,
                         'members' => array(),
                         'origMembers' => array()
                     );
                 }
+            }
+        }
+
+        // Add new optigem group to list of default groups.
+        if (is_array($defaultParentGroups) && count($defaultParentGroups) > 0 && count($newGroups) > 0) {
+
+            foreach ($defaultParentGroups as $group) {
+                $group_info['member'] = $newGroups;
+                ldap_mod_add($this->ldapConnection, $group, $group_info);
             }
         }
     }

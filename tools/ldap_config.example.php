@@ -16,7 +16,9 @@ $config = array(
     'db_user' => 'myuser',
     'db_pw' => '123 password',
     
-    'logLevel' => E_ERROR
+    'logLevel' => E_ERROR,
+
+    'optigem_category_default_groups' => array()
 );
 
 ?>

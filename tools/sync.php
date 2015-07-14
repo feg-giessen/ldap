@@ -19,7 +19,7 @@ const GROUP_DN = 'ou=gruppen,dc=feg-giessen,dc=de';
 $groups = $ldapSync->getLdapSyncGroups('groupOfNames', GROUP_DN);
 
 $ogCategories = $ldapSync->getOptigemCategories();
-$ldapSync->importOptigemCategories($groups, $ogCategories, GROUP_DN);
+$ldapSync->importOptigemCategories($groups, $ogCategories, GROUP_DN, $config['optigem_category_default_groups']);
 
 $ldapSync->syncUsers($groups, $ogCategories, 'ou=benutzer', 'ou=inaktiv', 'dc=feg-giessen,dc=de', $config['syncPasswords']);
 
