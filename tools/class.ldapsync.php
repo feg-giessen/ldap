@@ -112,9 +112,9 @@ class ldapsync {
 
         $success = ldap_bind($ldap_conn , $config['ldap_user'], $config['ldap_pw']);
         if (!$success) {
-            $this->log_msg('LDAP connection failed', E_ERROR);
+            $this->log_msg('LDAP connection failed: ' . ldap_error($ldap_conn), E_ERROR);
             ldap_close($ldap_conn);
-            die('LDAP connection failed\n');
+            die("LDAP connection failed\n");
         }
 
         return $ldap_conn;
@@ -269,40 +269,6 @@ class ldapsync {
         $result->free();
         $result->close();
 
-        //
-        // Update 'entryUUID' fields for new users in TYPO3 database.
-
-        $sql = "SELECT * from fe_users WHERE tx_igldapssoauth_dn != '' and ldap_entryuuid IS NULL";
-        $result = $this->db->query($sql);
-
-        $sql = 'UPDATE fe_users SET ldap_entryuuid=? WHERE uid=?';
-        $updateStatement = $this->db->prepare($sql);
-
-        while ($db_field = $result->fetch_assoc()) {
-            list($cn, $dn) = explode(',', $db_field['tx_igldapssoauth_dn'], 2);
-
-            $ldap_entry = null;
-            $cn = ldap_escape(utf8_encode(substr($cn, 3)));
-            $matchedDn = $this->getLdapUserFilter($dn, $ldap_entry, "(&(cn=$cn))", array('cn', 'entryuuid'));
-
-            $dnForCompare = utf8_encode($db_field['tx_igldapssoauth_dn']);
-            if ($matchedDn === $dnForCompare) {
-                $updateStatement->bind_param('si', $ldap_entry['entryuuid'][0], $db_field['uid']);
-                $updateStatement->execute();
-                $updateStatement->reset();
-
-                $this->log_msg('Updated entryUUID for ' . $db_field['username'], E_NOTICE);
-            } else {
-                $this->log_msg('No match: ' . $dnForCompare, E_WARNING);
-                $this->log_msg('No match: ' . $matchedDn, E_WARNING);
-            }
-        }
-
-        $updateStatement->close();
-
-        $result->free();
-        $result->close();
-
         $sql = "SELECT * from fe_users WHERE ldap_entryuuid IS NOT NULL AND ldap_entryuuid != ''";
         $result = $this->db->query($sql);
 
@@ -423,22 +389,57 @@ class ldapsync {
 
     /**
      * @param string $baseDn
-     * @param int $uid
+     * @param $filter
+     * @param array $attributes
+     * @return null|string full dn
+     */
+    private function getLdapUsers($baseDn, $filter, array $attributes) {
+        $sr = ldap_search($this->ldapConnection, $baseDn, $filter, $attributes);
+
+        $info = null;
+        $ldap_res = null;
+        $users = array();
+        if ($sr !== false) {
+            $info = ldap_get_entries($this->ldapConnection, $sr);
+
+            if ($info['count'] && $info['count'] !== 0) {
+                foreach ($info as $index => $entry) {
+                    if (is_array($entry)) {
+                        if (isset($entry['count'])) {
+                            unset($entry['count']);
+                        }
+
+                        foreach ($entry as $key => $value) {
+                            if (isset($value['count'])) {
+                                unset($entry[$key]['count']);
+                            }
+                        }
+
+                        $users[$entry['entryuuid']['0']] = $entry;
+                    }
+                }
+            }
+
+            ldap_free_result($sr);
+        }
+
+        return $users;
+    }
+
+    /**
+     * @param array $ldapUser
      * @param string $jpegPath
      * @return bool success
      */
-    public function setUserPhoto($baseDn, $uid, $jpegPath) {
-        $user = null;
-        $user_dn = $this->getLdapUser($baseDn, $uid, $user, 'fegperson');
-
-        if ($user === null)
+    public function setUserPhoto(array $ldapUser, $jpegPath) {
+        if ($ldapUser === null)
             return false;
 
         $fileTime = filemtime($jpegPath);
 
         // Skip file if not changed...
-        if (isset($user['phototimestamp']) && isset($user['phototimestamp'][0])) {
-            $timestamp = $this->getTimestamp($user['phototimestamp'][0]);
+        if (isset($ldapUser['phototimestamp']) && isset($ldapUser['phototimestamp'][0])) {
+            $timestamp = $this->getTimestamp($ldapUser['phototimestamp'][0]);
 
             if ($timestamp >= $fileTime)
                 return false;
@@ -450,6 +451,8 @@ class ldapsync {
             'phototimestamp' => $this->getLdapDate($fileTime),
         );
         fclose($f);
+
+        $user_dn = $ldapUser['dn'];
 
         $success = ldap_modify(
             $this->ldapConnection,
@@ -465,8 +468,24 @@ class ldapsync {
         return $success;
     }
 
-    public function importPhotos($baseDn, $jpegSearchPath) {
+    public function importPhotos($baseDn, $allLdapUsersFilter, $jpegSearchPath) {
         $count = 0;
+
+        // Get all fe_users records for entryUUID resolsution
+
+        $sql = "SELECT uid,ldap_entryuuid from fe_users WHERE NOT (ldap_entryuuid IS NULL)";
+        $result = $this->db->query($sql);
+
+        $fe_users = array();
+
+        while ($db_field = $result->fetch_assoc()) {
+            $fe_users[intval($db_field['uid'])] = $db_field['ldap_entryuuid'];
+        }
+
+        $result->free();
+        $result->close();
+
+        $ldapUsers = $this->getLdapUsers($baseDn, $allLdapUsersFilter, array('cn', 'dn', 'entryuuid', 'phototimestamp'));
 
         // list all files in specified path
         $files = glob($jpegSearchPath);
@@ -490,8 +509,16 @@ class ldapsync {
             if ($uid != $name)
                 continue;
 
+            $entryUuid = isset($fe_users[$uid]) ? $fe_users[$uid] : null;
+            if ($entryUuid == null)
+                continue;
+
+            $ldapUser = isset($ldapUsers[$entryUuid]) ? $ldapUsers[$entryUuid] : null;
+            if ($ldapUser == null)
+                continue;
+
             // import photo to LDAP
-            if ($this->setUserPhoto($baseDn, $uid, $path)) {
+            if ($this->setUserPhoto($ldapUser, $path)) {
                 $count += 1;
             }
         }
