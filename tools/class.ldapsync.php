@@ -868,10 +868,10 @@ class user {
 
     public function getOgCategories() {
         if ($this->ogCategories === null) {
-            if (!isset($this->data['og_categories'])) {
+            if (!isset($this->data['og_categorys'])) {
                 $this->ogCategories = array();
             } else {
-                $this->ogCategories = array_unique($this->splitIntegers($this->data['og_categories']));
+                $this->ogCategories = array_unique($this->splitIntegers($this->data['og_categorys']));
             }
         }
 
