@@ -565,9 +565,7 @@ class ldapsync {
                 if ($user->hasOgCategory($ogCategories, 'Mitglied')) {
                     $ou = 'ou=mitglieder,' . $dnActiveUsers;
                 } else {
-                    // TODO: default is "extern" in future.
-                    // $ou = 'ou=extern,' . $dnActiveUsers;
-                    $ou = 'ou=mitglieder,' . $dnActiveUsers;
+                    $ou = 'ou=extern,' . $dnActiveUsers;
                 }
 
                 $required_ou_base = $dnActiveUsers . ',' . $baseDn;
@@ -610,6 +608,8 @@ class ldapsync {
             if ($old_cn !== $user->cn) {
                 list(,$new_parent) = explode(',', $ldap_user_dn, 2);
                 ldap_rename($this->ldapConnection, $ldap_user_dn, 'cn=' . $user->cn, $new_parent, true);
+            } else {
+                $dn = $ldap_user_dn;
             }
 
             if (!$user->isInactive()) {
@@ -660,6 +660,10 @@ class ldapsync {
     private function getLdapEntry(user $user, $defaultCountry, $syncPasswords=false) {
         $entry = array(
             'displayname' => $user->data['name'],
+            'givenname' => $user->data['first_name'],
+            'sn' => $user->data['last_name'],
+            'title' => $user->data['title'],
+            'gender' => ($user->data['gender'] == 0 ? 1 : ($user->data['gender'] == 1 ? 2 : 0)),  // transform according to ISO/IEC 5218
             'typo3disabled' => $user->disable ? 'TRUE' : 'FALSE',
 
             'street' => $user->data['address'],
