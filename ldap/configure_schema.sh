@@ -31,5 +31,8 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/sizelimit.ldif
 echo "checkpoints..."
 ldapmodify -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/checkpoint.ldif
 
+echo "index..."
+ldapmodify -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/index.ldif
+
 echo "certs.."
 ldapmodify -Y EXTERNAL -H ldapi:/// -f $SCRIPTPATH/schema/certinfo.ldif
