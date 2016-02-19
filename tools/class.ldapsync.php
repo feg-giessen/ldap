@@ -572,6 +572,7 @@ class ldapsync {
             }
 
             $dn = "cn=$user->cn,$ou,$baseDn";
+	    //$this->log_msg("Working... $dn\n", E_NOTICE);
 
             $ldap_user = null;
             $ldap_user_dn = $this->getLdapUser($baseDn, $user->uid, $ldap_user, 'inetOrgPerson');
@@ -608,7 +609,7 @@ class ldapsync {
             if ($old_cn !== $user->cn) {
                 list(,$new_parent) = explode(',', $ldap_user_dn, 2);
                 ldap_rename($this->ldapConnection, $ldap_user_dn, 'cn=' . $user->cn, $new_parent, true);
-            } else {
+            } else if (!empty($ldap_user_dn)) {
                 $dn = $ldap_user_dn;
             }
 
@@ -772,7 +773,7 @@ class ldapsync {
      */
     private function renameGroup(array $ldapGroup, $new_name, $dn) {
         $name_old = $ldapGroup['cn'];
-        if (strcasecmp($name_old, $new_name) !== 0) {
+        if (strcasecmp($name_old, $new_name) !== 0 && strcasecmp($name_old, utf8_encode($new_name)) !== 0) {
             $this->log_msg("Renaming group $new_name... (old: $name_old)\n", E_NOTICE);
             ldap_rename($this->ldapConnection, "cn=$name_old,$dn", $new_name, $dn, true);
 
@@ -858,9 +859,14 @@ class user {
     }
 
     public function isInactive(){
-        return $this->disable
-            || ($this->startTime !== 0 && $this->startTime > time())
-            || ($this->endTime !== 0 && $this->endTime < time());
+	if ($this->startTime !== 0 || $this->endTime !== 0) {
+		$activeTimeframe = ($this->startTime === 0 || $this->startTime <= time())
+		    && ($this->endTime === 0 || $this->endTime >= time());
+
+		return (!$activeTimeframe || !$this->hasOgCategories());
+	}
+
+        return !$this->hasOgCategories(); //$this->disable;
     }
 
     public function getUserGroups() {
@@ -880,6 +886,11 @@ class user {
         }
 
         return $this->ogCategories;
+    }
+    
+    public function hasOgCategories() {
+	$categories = $this->getOgCategories();
+	return !empty($categories);
     }
 
     public function hasOgCategory(array $ogCategories, $name) {
