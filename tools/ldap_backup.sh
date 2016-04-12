@@ -1,9 +1,12 @@
-#!/bin/sh
-BACKUPDATE=ldap-$( date +%y%m%d-%H%M )
-BACKUPPATH=/home/backups
+#!/bin/bash
+# dump the ldap database
 
-slapcat -b "cn=config" -l $BACKUPPATH/config-$BACKUPDATE.ldif
-slapcat -b "dc=feg-giessen,dc=de"-l $BACKUPPATH/feg-giessen-$BACKUPDATE.ldif
+OUTFILE=ldapdb-`/bin/date +%d-%m-%y_%H-%M`.ldif
 
-gzip -9 $BACKUPPATH/config-$BACKUPDATE.ldif
-gzip -9 $BACKUPPATH/feg-giessen-$BACKUPDATE.ldif
+#echo "Starting slapcat..."
+/usr/sbin/slapcat -n0 > $OUTFILE && /usr/sbin/slapcat -n1 >> $OUTFILE
+gzip -9 $OUTFILE
+find `dirname $OUTFILE` -name "*.ldif" -mtime +30 -exec rm -f {} \;
+find `dirname $OUTFILE` -name "*.ldif.gz" -mtime +30 -exec rm -f {} \;
+STATE=$?
+exit $STATE
