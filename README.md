@@ -69,3 +69,23 @@ Insert the following line at the end:
 ### Change LDAP passwords
 
 Change all passwords preset in this configuration using `sudo sh /etc/ldap/change_passwords.sh`
+
+## Migrate to new server
+
+### On old server
+
+* Perform backup using [backup script](tools/ldap_backup.sh)
+* (Optional: set old server installation to 'readonly')
+
+### On new server
+
+* Install `slapd` and `ldap-utils` on new server
+* Stop `slapd` service: `service slapd stop`
+* Install certificates (see above)
+* Set configuration in  `/etc/default/slapd` and `/var/lib/ldap/DB_CONFIG` (see above)
+* Backup `/etc/ldap/slapd.d`: `mv /etc/ldap/slapd.d /etc/ldap/slapd.d_backup`
+* Create new `slpad.d` directory: `mkdir /etc/ldap/slapd.d`
+* Apply configuration from backup for config db: `slapadd -l ldapdb-03-09-16_04-40_config.ldif -F /etc/ldap/slapd.d -n 0`
+* Apply data from backup for data db: `slapadd -l ldapdb-03-09-16_04-40_data.ldif -F /etc/ldap/slapd.d -n 1`
+* Set ownerships: `chown -R openldap:openldap /etc/ldap/slapd.d && chown openldap:openldap /var/lib/ldap/*`
+* Start sldapd on server: `service slapd start`
