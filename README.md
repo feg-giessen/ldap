@@ -75,7 +75,7 @@ Change all passwords preset in this configuration using `sudo sh /etc/ldap/chang
 ### On old server
 
 * Perform backup using [backup script](tools/ldap_backup.sh)
-* (Optional: set old server installation to 'readonly')
+* (Optional: set old server installation to 'readonly': `ldap/set_readonly.sh`)
 
 ### On new server
 
