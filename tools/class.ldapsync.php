@@ -665,7 +665,7 @@ class ldapsync {
             'sn' => $user->data['last_name'],
             'title' => $user->data['title'],
             'gender' => ($user->data['gender'] == 0 ? 1 : ($user->data['gender'] == 1 ? 2 : 0)),  // transform according to ISO/IEC 5218
-            'typo3disabled' => $user->disable ? 'TRUE' : 'FALSE',
+            'typo3disabled' => $user->isInactive() ? 'TRUE' : 'FALSE',
 
             'street' => $user->data['address'],
             'l' => $user->data['city'],
