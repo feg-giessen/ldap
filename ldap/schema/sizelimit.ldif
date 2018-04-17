@@ -1,5 +1,5 @@
 dn: olcDatabase={-1}frontend,cn=config
 changetype: modify
 replace: olcSizeLimit
-olcSizeLimit: 1000
+olcSizeLimit: 10000
 
